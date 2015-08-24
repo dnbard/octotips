@@ -1,6 +1,9 @@
 console.log('Octotips initialized');
 
-var token;
+var collection = new Map(),
+    documents = new Map(),
+    isTooltipActive = false,
+    token;
 
 function uuid() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -14,28 +17,31 @@ chrome.storage.sync.get(function(storage){
     token = storage.token;
 });
 
-var linkElements = document.querySelectorAll('a'),
-    linkRegex = /^(\/[a-z0-9\-\_\.]*\/[a-z0-9\-\_\.]*).*?(?!commits)/i,
-    stopRexex = /(profile|dashboard|account|organizations|settings|orgs|blog|commits|branches|releases|contributors|subscriptions|stargazers|network|issues|pulls|wiki|pulse|graphs|settings|archive|commit|blob|tree)/i,
-    collection = new Map(),
-    documents = new Map();
+function initialize(){
+    var linkElements = document.querySelectorAll('a'),
+        linkRegex = /^(\/[a-z0-9\-\_\.]*\/[a-z0-9\-\_\.]*).*?(?!commits)/i,
+        stopRexex = /(profile|dashboard|account|organizations|settings|orgs|blog|commits|branches|releases|contributors|subscriptions|stargazers|network|issues|pulls|wiki|pulse|graphs|settings|archive|commit|blob|tree)/i;
 
-Array.prototype.slice.call(linkElements, 0).forEach(function (element) {
-    var href = element.getAttribute('href'),
-        ariaLabel = element.getAttribute('aria-label'),
-        id;
+    Array.prototype.slice.call(linkElements, 0).forEach(function (element) {
+        var href = element.getAttribute('href'),
+            ariaLabel = element.getAttribute('aria-label'),
+            isAlreadyInitialized = !!element.getAttribute('data-octotips-id'),
+            id;
 
-    if (ariaLabel === 'Code'){
-        return;
-    }
+        if (ariaLabel === 'Code' || isAlreadyInitialized){
+            return;
+        }
 
-    if (linkRegex.test(href) && !stopRexex.test(href)) {
-        id = uuid();
+        if (linkRegex.test(href) && !stopRexex.test(href)) {
+            id = uuid();
 
-        collection.set(id, linkRegex.exec(href)[1]);
-        element.setAttribute('data-octotips-id', id);
-    }
-});
+            collection.set(id, linkRegex.exec(href)[1]);
+            element.setAttribute('data-octotips-id', id);
+        }
+    });
+}
+
+initialize();
 
 document.body.onmouseout = function(e){
     var id = e.target.getAttribute('data-octotips-id'),
@@ -46,6 +52,9 @@ document.body.onmouseout = function(e){
     }
 
     e.target.removeChild(tooltipNode);
+    setTimeout(function(){
+        isTooltipActive = false;
+    }, 10);
 }
 
 document.body.onmouseover = function (e) {
@@ -66,6 +75,7 @@ document.body.onmouseover = function (e) {
     tooltip.className = 'octotip';
     tooltip.innerHTML = '<div class="octotip-loader"></div>';
 
+    isTooltipActive = true;
     e.target.appendChild(tooltip);
 
     if (!documents.has(url)) {
@@ -175,3 +185,17 @@ function populateTooltip(tooltipNode, data){
         tooltipNode.querySelector('.octotip-description').innerText = data.description;
     }
 }
+
+var callback = function(allmutations){
+    if (isTooltipActive){
+        return;
+    }
+
+    initialize();
+},
+    mo = new MutationObserver(callback),
+    options = {
+        'childList': true,
+        'subtree': true
+    };
+mo.observe(document.body, options);
