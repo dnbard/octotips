@@ -1,0 +1,80 @@
+.octotip{
+    background-color: rgba(0, 0, 0, 0.8);
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    color: lightgray;
+    display: inline-block;
+    font-family: Helvetica, arial, nimbussansl, liberationsans, freesans, clean, sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol';
+    font-size: 10pt;
+    font-stretch: normal;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: normal;
+    margin-left: 5px;
+    padding-bottom: 2px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 2px;
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    text-align: center;
+    word-wrap: break-word;
+    width: auto;
+    max-width: 450px;
+    z-index: 1000000;
+    line-height: 1.2;
+}
+
+.octotip-name, .octotip-author{
+    color: white;
+    font-weight: bold;
+}
+
+.octotip-highlight{
+    color: white;
+}
+
+.octotip-counters{
+    color: white;
+}
+
+.octotip-counters *{
+    margin: 0 2px;
+}
+
+.octotip-avatar{
+    margin-left: 2px;
+    margin-right: 4px;
+    display: inline-block;
+}
+
+.octotip hr{
+    border-color: #797979;
+    margin: 3px 0;
+}
+
+.octotip .octicon{
+    color: lightgray;
+}
+
+.octotip-fork .octicon{
+    margin-right: 2px;
+}
+
+.news .alert{
+    overflow: inherit !important;
+}
+
+.mini-repo-list-item *{
+    pointer-events: none;
+}
+
+.octotip-loader{
+    width: 16px;
+    height: 16px;
+    background-repeat: no-repeat;
+    background-image: url(data:image/gif;base64,R0lGODlhEAAQAPIAAAAAAP///zw8PLy8vP///5ycnHx8fGxsbCH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==);
+}
