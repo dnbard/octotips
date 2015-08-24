@@ -38,5 +38,6 @@ chrome.storage.sync.get(function(storage){
 
     if (token){
         document.querySelector('.token').value = token;
+        document.querySelector('#auth').innerText = 'Update GitHub Token';
     }
 });
