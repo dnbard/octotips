@@ -126,7 +126,7 @@ function populateTooltip(tooltipNode, data){
                 '<span>%stargazers_count%<span class="octicon octicon-star"></span></span>',
                 '<span>%forks_count%<span class="octicon octicon-repo-forked"></span></span>',
             '</div>',
-            '<div>%description%</div>',
+            '<div class="octotip-description"></div>',
             '<hr />',
             '<div class="octotip-language">Language: <span class="octotip-highlight">%language%</span></div>',
             '<div class="octotip-size">Repository Size: <span class="octotip-highlight"></span></div>',
@@ -164,5 +164,9 @@ function populateTooltip(tooltipNode, data){
         }
     } else {
         tooltipNode.querySelector('.octotip-size').style.display = 'none';
+    }
+
+    if (data.description){
+        tooltipNode.querySelector('.octotip-description').innerText = data.description;
     }
 }
