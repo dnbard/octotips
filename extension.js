@@ -22,7 +22,12 @@ var linkElements = document.querySelectorAll('a'),
 
 Array.prototype.slice.call(linkElements, 0).forEach(function (element) {
     var href = element.getAttribute('href'),
+        ariaLabel = element.getAttribute('aria-label'),
         id;
+
+    if (ariaLabel === 'Code'){
+        return;
+    }
 
     if (linkRegex.test(href) && !stopRexex.test(href)) {
         id = uuid();
