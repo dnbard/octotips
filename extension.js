@@ -162,5 +162,7 @@ function populateTooltip(tooltipNode, data){
         } else {
             tooltipNode.querySelector('.octotip-size .octotip-highlight').innerText = data.size + ' KB';
         }
+    } else {
+        tooltipNode.querySelector('.octotip-size').style.display = 'none';
     }
 }
