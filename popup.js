@@ -11,13 +11,16 @@ document.querySelector('#auth').onclick = function(){
         xmlhttp.setRequestHeader('Content-Type', 'application/json')
 
         xmlhttp.onreadystatechange = function () {
-            var tokenRegexp = /access_token=([a-z0-9]*)/;
+            var tokenRegexp = /access_token=([a-z0-9]*)/,
+                token;
 
             if (xmlhttp.readyState == 4) {
                 if (xmlhttp.status == 200) {
+                    token = tokenRegexp.exec(xmlhttp.responseText)[1];
                     chrome.storage.sync.set({
-                        token: tokenRegexp.exec(xmlhttp.responseText)[1]
+                        token: token
                     });
+                    document.querySelector('.token').value = token;
                 }
             }
         };
@@ -29,3 +32,11 @@ document.querySelector('#auth').onclick = function(){
         }));
     });
 }
+
+chrome.storage.sync.get(function(storage){
+    var token = storage.token;
+
+    if (token){
+        document.querySelector('.token').value = token;
+    }
+});
