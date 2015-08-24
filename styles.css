@@ -68,7 +68,7 @@
     overflow: inherit !important;
 }
 
-.mini-repo-list-item *{
+.mini-repo-list-item *, .repo-list-name a *{
     pointer-events: none;
 }
 
