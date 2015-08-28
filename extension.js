@@ -1,9 +1,40 @@
 console.log('Octotips initialized');
 
+var extend = function ( defaults, options ) {
+    var extended = {};
+    var prop;
+    for (prop in defaults) {
+        if (Object.prototype.hasOwnProperty.call(defaults, prop)) {
+            extended[prop] = defaults[prop];
+        }
+    }
+    for (prop in options) {
+        if (Object.prototype.hasOwnProperty.call(options, prop)) {
+            if (Array.isArray(extended[prop]) && Array.isArray(options[prop])){
+                extended[prop] = extended[prop].concat(options[prop]);
+            } else {
+                extended[prop] = options[prop];
+            }
+        }
+    }
+    return extended;
+};
+
 var collection = new Map(),
     documents = new Map(),
     isTooltipActive = false,
     token;
+
+var TooltipTypes = {
+    REPOSITORY: 'tooltip.repository'
+};
+
+var Requests = {};
+Requests[TooltipTypes.REPOSITORY] = [
+    { path: 'https://api.github.com/repos%URL%', field: 'main' },
+    { path: 'https://api.github.com/repos%URL%/contributors', field: 'contributors' },
+    { path: 'https://api.github.com/repos%URL%/stats/contributors', field: 'stats' }
+];
 
 function uuid() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -20,7 +51,7 @@ chrome.storage.sync.get(function(storage){
 function initialize(){
     var linkElements = document.querySelectorAll('a'),
         linkRegex = /^(\/[a-z0-9\-\_\.]*\/[a-z0-9\-\_\.]*).*?(?!commits)/i,
-        stopRexex = new RegExp([
+        stopRegex = new RegExp([
             '/profile',
             '/dashboard',
             '/account',
@@ -57,10 +88,13 @@ function initialize(){
             return;
         }
 
-        if (linkRegex.test(href) && !stopRexex.test(href)) {
+        if (linkRegex.test(href) && !stopRegex.test(href)) {
             id = uuid();
 
-            collection.set(id, linkRegex.exec(href)[1]);
+            collection.set(id, {
+                type: TooltipTypes.REPOSITORY,
+                target: linkRegex.exec(href)[1]
+            });
             element.setAttribute('data-octotips-id', id);
         }
     });
@@ -84,17 +118,19 @@ document.body.onmouseout = function(e){
 
 document.body.onmouseover = function (e) {
     var id = e.target.getAttribute('data-octotips-id'),
-        url;
+        tooltipAction, url;
 
     if (id === undefined) {
         return;
     }
 
-    url = collection.get(id);
+    tooltipAction = collection.get(id);
 
-    if (!url){
+    if (!tooltipAction){
         return;
     }
+
+    url = tooltipAction.target;
 
     var tooltip = document.createElement('div');
     tooltip.className = 'octotip';
@@ -103,9 +139,33 @@ document.body.onmouseover = function (e) {
     isTooltipActive = true;
     e.target.appendChild(tooltip);
 
-    if (!documents.has(url)) {
-        var xmlhttp = new XMLHttpRequest();
-        xmlhttp.open('GET', 'https://api.github.com/repos' + url, true);
+    if (!documents.has(tooltipAction.target)) {
+        var requests = Requests[tooltipAction.type],
+            requestsMade = 0;
+        requests.forEach(function(request){
+            makeHTTPRequest(request.path.replace('%URL%', url), tooltipAction, tooltip, {
+                done: function(data){
+                    requestsMade ++;
+                    if (requestsMade === requests.length){
+                        populateTooltip(tooltip, documents.get(tooltipAction.target));
+                        console.log(documents.get(tooltipAction.target));
+                    }
+                },
+                save: function(data){
+                    var result = {};
+                    result[request.field] = data;
+                    mapExtend(documents, tooltipAction.target, result);
+                }
+            });
+        });
+    } else {
+        populateTooltip(tooltip, documents.get(tooltipAction.target));
+    }
+}
+
+function makeHTTPRequest(url, tooltipAction, tooltip, callback){
+    var xmlhttp = new XMLHttpRequest();
+        xmlhttp.open('GET', url, true);
         xmlhttp.setRequestHeader('Content-Type', 'application/json');
         if (token){
             xmlhttp.setRequestHeader('Authorization', 'Bearer ' + token);
@@ -118,19 +178,31 @@ document.body.onmouseover = function (e) {
                 return populateErrorTooltip(tooltip);
             }
 
-            if (xmlhttp.responseText){
+            if (xmlhttp.responseText && xmlhttp.readyState == 4){
                 try{
                     data = JSON.parse(xmlhttp.responseText);
-                    documents.set(url, data);
-                    populateTooltip(tooltip, data);
+
+                    var link = xmlhttp.getResponseHeader('Link');
+
+                    if (link && /<([\S]*)>;\srel="next"/.test(link)){
+                        callback.save.call(this, data);
+                        makeHTTPRequest(/<([\S]*)>;\srel="next"/.exec(link)[1], tooltipAction, tooltip, callback);
+                    } else {
+                        callback.save.call(this, data);
+                        callback.done.call(this, data);
+                    }
                 } catch(e){ }
             }
         };
 
         xmlhttp.send(null);
-    } else {
-        populateTooltip(tooltip, documents.get(url));
-    }
+}
+
+function mapExtend(map, id, obj){
+    var oldObj = map.get(id) || {};
+    var newObj = extend(oldObj, obj);
+    map.set(id, newObj);
+    return newObj;
 }
 
 function populateErrorTooltip(tooltipNode){
@@ -150,28 +222,29 @@ function populateTooltip(tooltipNode, data){
     var templateRegex = /\%([a-z\.\_]*)\%/gi,
         tooltipTemplate = [
             '<div class="octotip-title">',
-                '<span class="octotip-name">%name%</span>',
+                '<span class="octotip-name">%main.name%</span>',
                 ' by ',
                 '<span class="octotip-author">',
-                    '<img class="octotip-avatar" src="%owner.avatar_url%&s=16" />',
-                    '%owner.login%',
+                    '<img class="octotip-avatar" src="%main.owner.avatar_url%&s=16" />',
+                    '%main.owner.login%',
                 '</span>',
             '</div>',
             '<div class="octotip-fork" style="display: none;">' +
                 '<span class="octicon octicon-repo-forked"></span>',
-                '<span>forked from <span class="octotip-highlight">%parent.full_name%</span></span>',
+                '<span>forked from <span class="octotip-highlight">%main.parent.full_name%</span></span>',
             '</div>',
             '<div class="octotip-counters">',
-                '<span>%subscribers_count%<span class="octicon octicon-eye"></span></span>',
-                '<span>%stargazers_count%<span class="octicon octicon-star"></span></span>',
-                '<span>%forks_count%<span class="octicon octicon-repo-forked"></span></span>',
+                '<span>%main.subscribers_count%<span class="octicon octicon-eye"></span></span>',
+                '<span>%main.stargazers_count%<span class="octicon octicon-star"></span></span>',
+                '<span>%main.forks_count%<span class="octicon octicon-repo-forked"></span></span>',
             '</div>',
             '<div class="octotip-description"></div>',
             '<hr />',
-            '<div class="octotip-language">Language: <span class="octotip-highlight">%language%</span></div>',
+            '<div class="octotip-contributors">Contributors: <span class="octotip-highlight">0</span></div>',
+            '<div class="octotip-language">Language: <span class="octotip-highlight">%main.language%</span></div>',
             '<div class="octotip-size">Repository Size: <span class="octotip-highlight"></span></div>',
-            '<div>Open Issues: <span class="octotip-highlight">%open_issues_count%</span></div>',
-            '<div>Updated <time datetime="%pushed_at%" is="relative-time"></time></div>'
+            '<div>Open Issues: <span class="octotip-highlight">%main.open_issues_count%</span></div>',
+            '<div>Updated <time datetime="%main.pushed_at%" is="relative-time"></time></div>'
         ].join(''),
         match = templateRegex.exec(tooltipTemplate),
         keys = [];
@@ -188,26 +261,30 @@ function populateTooltip(tooltipNode, data){
 
     tooltipNode.innerHTML = tooltipTemplate;
 
-    if (data.fork){
+    if (data.main.fork){
         tooltipNode.querySelector('.octotip-fork').style.display = "block";
     }
 
-    if (data.language === null){
+    if (data.main.language === null){
         tooltipNode.querySelector('.octotip-language').style.display = "none";
     }
 
-    if (data.size){
-        if (data.size > 999){
-            tooltipNode.querySelector('.octotip-size .octotip-highlight').innerText = (data.size / 1000).toFixed(1) + ' MB';
+    if (data.main.size){
+        if (data.main.size > 999){
+            tooltipNode.querySelector('.octotip-size .octotip-highlight').innerText = (data.main.size / 1000).toFixed(1) + ' MB';
         } else {
-            tooltipNode.querySelector('.octotip-size .octotip-highlight').innerText = data.size + ' KB';
+            tooltipNode.querySelector('.octotip-size .octotip-highlight').innerText = data.main.size + ' KB';
         }
     } else {
         tooltipNode.querySelector('.octotip-size').style.display = 'none';
     }
 
-    if (data.description){
-        tooltipNode.querySelector('.octotip-description').innerText = data.description;
+    if (data.main.description){
+        tooltipNode.querySelector('.octotip-description').innerText = data.main.description;
+    }
+
+    if (data.contributors){
+        tooltipNode.querySelector('.octotip-contributors .octotip-highlight').innerText = data.contributors.length;
     }
 }
 
