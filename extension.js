@@ -20,7 +20,32 @@ chrome.storage.sync.get(function(storage){
 function initialize(){
     var linkElements = document.querySelectorAll('a'),
         linkRegex = /^(\/[a-z0-9\-\_\.]*\/[a-z0-9\-\_\.]*).*?(?!commits)/i,
-        stopRexex = /(profile|dashboard|account|organizations|settings|orgs|blog|commits|branches|releases|contributors|subscriptions|stargazers|network|issues|pulls|wiki|pulse|graphs|settings|archive|commit|blob|tree)/i;
+        stopRexex = new RegExp([
+            '/profile',
+            '/dashboard',
+            '/account',
+            '/organizations',
+            '/settings',
+            '/orgs',
+            '/blog',
+            '/commits',
+            '/branches',
+            '/releases',
+            '/contributors',
+            '/subscriptions',
+            '/stargazers',
+            '/network',
+            '/issues',
+            '/pulls',
+            '/wiki',
+            '/pulse',
+            '/graphs',
+            '/settings',
+            '/archive',
+            '/commit',
+            '/blob',
+            '/tree'
+        ].join('|'));
 
     Array.prototype.slice.call(linkElements, 0).forEach(function (element) {
         var href = element.getAttribute('href'),
