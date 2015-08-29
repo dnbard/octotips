@@ -102,6 +102,16 @@ function initialize(){
 
 initialize();
 
+function drawProgressBar(element, value){
+    var currentValue = parseInt(element.style.width.replace('%', ''));
+
+    if (currentValue > value){
+        return;
+    }
+
+    element.style.width = value + '%';
+}
+
 document.body.onmouseout = function(e){
     var id = e.target.getAttribute('data-octotips-id'),
         tooltipNode = e.target.querySelector('.octotip');
@@ -141,12 +151,19 @@ document.body.onmouseover = function (e) {
 
     if (!documents.has(tooltipAction.target)) {
         var requests = Requests[tooltipAction.type],
-            requestsMade = 0;
-
-        tooltip.querySelector('.octotip-loader__inner').style.width = (requestsMade + 1) / requests.length * 100 + '%';
+            requestsMade = 0,
+            subRequestsMade = 0,
+            maxRequests = requests.length;
 
         requests.forEach(function(request){
-            makeHTTPRequest(request.path.replace('%URL%', url), tooltipAction, tooltip, {
+            var options = {
+                url: request.path.replace('%URL%', url),
+                tooltipAction: tooltipAction,
+                tooltip: tooltip,
+                firstRequest: true
+            };
+
+            makeHTTPRequest(options, {
                 done: function(data){
                     requestsMade ++;
                     if (requestsMade === requests.length){
@@ -160,48 +177,62 @@ document.body.onmouseover = function (e) {
                     result[request.field] = data;
                     mapExtend(documents, tooltipAction.target, result);
 
-                    tooltip.querySelector('.octotip-loader__inner').style.width = (requestsMade + 1) / requests.length * 100 + '%';
+                    subRequestsMade ++;
+
+                    drawProgressBar(tooltip.querySelector('.octotip-loader__inner'), subRequestsMade / maxRequests * 100);
+                    console.log('%s / %s', subRequestsMade, maxRequests);
                 }
             });
         });
     } else {
         populateTooltip(tooltip, documents.get(tooltipAction.target));
     }
-}
 
-function makeHTTPRequest(url, tooltipAction, tooltip, callback){
-    var xmlhttp = new XMLHttpRequest();
-        xmlhttp.open('GET', url, true);
-        xmlhttp.setRequestHeader('Content-Type', 'application/json');
-        if (token){
-            xmlhttp.setRequestHeader('Authorization', 'Bearer ' + token);
-        }
-
-        xmlhttp.onreadystatechange = function () {
-            var data;
-
-            if (xmlhttp.status >= 400){
-                return populateErrorTooltip(tooltip);
+    function makeHTTPRequest(options, callback){
+        var xmlhttp = new XMLHttpRequest();
+            xmlhttp.open('GET', options.url, true);
+            xmlhttp.setRequestHeader('Content-Type', 'application/json');
+            if (token){
+                xmlhttp.setRequestHeader('Authorization', 'Bearer ' + token);
             }
 
-            if (xmlhttp.responseText && xmlhttp.readyState == 4){
-                try{
-                    data = JSON.parse(xmlhttp.responseText);
+            xmlhttp.onreadystatechange = function () {
+                var data;
 
-                    var link = xmlhttp.getResponseHeader('Link');
+                if (xmlhttp.status >= 400){
+                    return populateErrorTooltip(options.tooltip);
+                }
 
-                    if (link && /<([\S]*)>;\srel="next"/.test(link)){
-                        callback.save.call(this, data);
-                        makeHTTPRequest(/<([\S]*)>;\srel="next"/.exec(link)[1], tooltipAction, tooltip, callback);
-                    } else {
-                        callback.save.call(this, data);
-                        callback.done.call(this, data);
+                if (xmlhttp.responseText && xmlhttp.readyState == 4){
+                    try{
+                        data = JSON.parse(xmlhttp.responseText);
+
+                        var link = xmlhttp.getResponseHeader('Link');
+
+                        if (link && /<([\S]*)>;\srel="next"/.test(link)){
+                            callback.save.call(this, data);
+
+                            if (options.firstRequest && /page=([0-9]*)>;\srel="last"/.test(link)){
+                                var additionalRequests = parseInt(/page=([0-9]*)>;\srel="last"/.exec(link)[1]) - 1;
+                                maxRequests += additionalRequests;
+                            }
+
+                            options.url = /<([\S]*)>;\srel="next"/.exec(link)[1];
+                            options.firstRequest = false;
+
+                            makeHTTPRequest(options, callback);
+                        } else {
+                            callback.save.call(this, data);
+                            callback.done.call(this, data);
+                        }
+                    } catch(e){
+                        debugger;
                     }
-                } catch(e){ }
-            }
-        };
+                }
+            };
 
-        xmlhttp.send(null);
+            xmlhttp.send(null);
+    }
 }
 
 function mapExtend(map, id, obj){
