@@ -1,4 +1,4 @@
-.octotip{
+.octotip {
     background-color: rgba(0, 0, 0, 0.8);
     border-bottom-left-radius: 3px;
     border-bottom-right-radius: 3px;
@@ -14,8 +14,8 @@
     font-weight: normal;
     margin-left: 5px;
     padding-bottom: 2px;
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-left: 2px;
+    padding-right: 2px;
     padding-top: 2px;
     pointer-events: none;
     position: absolute;
@@ -28,53 +28,76 @@
     line-height: 1.2;
 }
 
-.octotip-name, .octotip-author{
+.octotip-name,
+.octotip-author {
     color: white;
     font-weight: bold;
 }
 
-.octotip-highlight{
+.octotip-highlight {
     color: white;
 }
 
-.octotip-counters{
+.octotip-counters {
     color: white;
 }
 
-.octotip-counters *{
+.octotip-counters * {
     margin: 0 2px;
 }
 
-.octotip-avatar{
+.octotip-avatar {
     margin-left: 2px;
     margin-right: 4px;
     display: inline-block;
 }
 
-.octotip hr{
+.octotip hr {
     border-color: #797979;
     margin: 3px 0;
 }
 
-.octotip .octicon{
+.octotip .octicon {
     color: lightgray;
 }
 
-.octotip-fork .octicon{
+.octotip-fork .octicon {
     margin-right: 2px;
 }
 
-.news .alert{
+.news .alert {
     overflow: inherit !important;
 }
 
-.mini-repo-list-item *, .repo-list-name a *{
+.mini-repo-list-item *,
+.repo-list-name a * {
     pointer-events: none;
 }
 
-.octotip-loader{
-    width: 16px;
-    height: 16px;
-    background-repeat: no-repeat;
-    background-image: url(data:image/gif;base64,R0lGODlhEAAQAPIAAAAAAP///zw8PLy8vP///5ycnHx8fGxsbCH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==);
+.octotip-loader {
+    width: 220px;
+    height: 24px;
+    margin: 5px;
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #5770A2;
+}
+
+.octotip-loader__inner {
+    background-color: #3A5792;
+    width: 0%;
+    height: 100%;
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+    background-size: 40px 40px;
+    animation: progress-bar-stripes 2s linear infinite;
+}
+
+@-webkit-keyframes progress-bar-stripes {
+    from {
+        background-position: 40px 0;
+    }
+    to {
+        background-position: 0 0;
+    }
 }

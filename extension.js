@@ -134,7 +134,7 @@ document.body.onmouseover = function (e) {
 
     var tooltip = document.createElement('div');
     tooltip.className = 'octotip';
-    tooltip.innerHTML = '<div class="octotip-loader"></div>';
+    tooltip.innerHTML = '<div class="octotip-loader"><div class="octotip-loader__inner"></div></div>';
 
     isTooltipActive = true;
     e.target.appendChild(tooltip);
@@ -142,19 +142,25 @@ document.body.onmouseover = function (e) {
     if (!documents.has(tooltipAction.target)) {
         var requests = Requests[tooltipAction.type],
             requestsMade = 0;
+
+        tooltip.querySelector('.octotip-loader__inner').style.width = (requestsMade + 1) / requests.length * 100 + '%';
+
         requests.forEach(function(request){
             makeHTTPRequest(request.path.replace('%URL%', url), tooltipAction, tooltip, {
                 done: function(data){
                     requestsMade ++;
                     if (requestsMade === requests.length){
-                        populateTooltip(tooltip, documents.get(tooltipAction.target));
-                        console.log(documents.get(tooltipAction.target));
+                        setTimeout(function(){
+                            populateTooltip(tooltip, documents.get(tooltipAction.target));
+                        }, 100);
                     }
                 },
                 save: function(data){
                     var result = {};
                     result[request.field] = data;
                     mapExtend(documents, tooltipAction.target, result);
+
+                    tooltip.querySelector('.octotip-loader__inner').style.width = (requestsMade + 1) / requests.length * 100 + '%';
                 }
             });
         });
