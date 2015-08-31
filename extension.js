@@ -1,6 +1,12 @@
 console.log('Octotips initialized');
 
-var extend = function ( defaults, options ) {
+function getDescendantProp(obj, desc) {
+        var arr = desc.split(".");
+        while(arr.length && (obj = obj[arr.shift()]));
+        return obj;
+    }
+
+function extend( defaults, options ) {
     var extended = {};
     var prop;
     for (prop in defaults) {
@@ -26,7 +32,8 @@ var collection = new Map(),
     token;
 
 var TooltipTypes = {
-    REPOSITORY: 'tooltip.repository'
+    REPOSITORY: 'tooltip.repository',
+    AUTHOR: 'tooltip.author'
 };
 
 var Requests = {};
@@ -34,6 +41,10 @@ Requests[TooltipTypes.REPOSITORY] = [
     { path: 'https://api.github.com/repos%URL%', field: 'main' },
     { path: 'https://api.github.com/repos%URL%/contributors', field: 'contributors' },
     { path: 'https://api.github.com/repos%URL%/stats/contributors', field: 'stats' }
+];
+Requests[TooltipTypes.AUTHOR] = [
+    { path: 'https://api.github.com/users%URL%', field: 'user' },
+    { path: 'https://api.github.com/users%URL%/repos', field: 'repos' }
 ];
 
 function uuid() {
@@ -50,7 +61,8 @@ chrome.storage.sync.get(function(storage){
 
 function initialize(){
     var linkElements = document.querySelectorAll('a'),
-        linkRegex = /^(\/[a-z0-9\-\_\.]*\/[a-z0-9\-\_\.]*).*?(?!commits)/i,
+        linkRegex = /^[htpsgihubcom\.\:\/]*(\/[a-z0-9\-\_\.]+\/[a-z0-9\-\_\.]+)/i,
+        authorRegex = /^[htpsgihubcom\.\/:]*(\/[a-z0-9\-\_\.]*)$/i,
         stopRegex = new RegExp([
             '/profile',
             '/dashboard',
@@ -75,7 +87,13 @@ function initialize(){
             '/archive',
             '/commit',
             '/blob',
-            '/tree'
+            '/tree',
+            '/notifications',
+            '\\\?language',
+            '/new',
+            '/explore',
+            '/stars',
+            'help.github.com'
         ].join('|'));
 
     Array.prototype.slice.call(linkElements, 0).forEach(function (element) {
@@ -84,16 +102,26 @@ function initialize(){
             isAlreadyInitialized = !!element.getAttribute('data-octotips-id'),
             id;
 
-        if (ariaLabel === 'Code' || isAlreadyInitialized){
+        if (ariaLabel === 'Code' || isAlreadyInitialized || stopRegex.test(href)){
             return;
         }
 
-        if (linkRegex.test(href) && !stopRegex.test(href)) {
+        if (linkRegex.test(href)) {
             id = uuid();
 
             collection.set(id, {
                 type: TooltipTypes.REPOSITORY,
-                target: linkRegex.exec(href)[1]
+                target: linkRegex.exec(href)[1],
+                render: populateRepositoryTooltip
+            });
+            element.setAttribute('data-octotips-id', id);
+        } else if (authorRegex.test(href)){
+            id = uuid();
+
+            collection.set(id, {
+                type: TooltipTypes.AUTHOR,
+                target: authorRegex.exec(href)[1],
+                render: populateAuthorTooltip
             });
             element.setAttribute('data-octotips-id', id);
         }
@@ -168,7 +196,7 @@ document.body.onmouseover = function (e) {
                     requestsMade ++;
                     if (requestsMade === requests.length){
                         setTimeout(function(){
-                            populateTooltip(tooltip, documents.get(tooltipAction.target));
+                            populateTooltip(tooltip, documents.get(tooltipAction.target), tooltipAction);
                         }, 100);
                     }
                 },
@@ -180,12 +208,11 @@ document.body.onmouseover = function (e) {
                     subRequestsMade ++;
 
                     drawProgressBar(tooltip.querySelector('.octotip-loader__inner'), subRequestsMade / maxRequests * 100);
-                    console.log('%s / %s', subRequestsMade, maxRequests);
                 }
             });
         });
     } else {
-        populateTooltip(tooltip, documents.get(tooltipAction.target));
+        populateTooltip(tooltip, documents.get(tooltipAction.target), tooltipAction);
     }
 
     function makeHTTPRequest(options, callback){
@@ -210,8 +237,6 @@ document.body.onmouseover = function (e) {
                         var link = xmlhttp.getResponseHeader('Link');
 
                         if (link && /<([\S]*)>;\srel="next"/.test(link)){
-                            callback.save.call(this, data);
-
                             if (options.firstRequest && /page=([0-9]*)>;\srel="last"/.test(link)){
                                 var additionalRequests = parseInt(/page=([0-9]*)>;\srel="last"/.exec(link)[1]) - 1;
                                 maxRequests += additionalRequests;
@@ -220,6 +245,7 @@ document.body.onmouseover = function (e) {
                             options.url = /<([\S]*)>;\srel="next"/.exec(link)[1];
                             options.firstRequest = false;
 
+                            callback.save.call(this, data);
                             makeHTTPRequest(options, callback);
                         } else {
                             callback.save.call(this, data);
@@ -249,13 +275,55 @@ function populateErrorTooltip(tooltipNode){
         '<div>More help can be found at: https://github.com/dnbard/octotips</div>';
 }
 
-function populateTooltip(tooltipNode, data){
-    function getDescendantProp(obj, desc) {
-        var arr = desc.split(".");
-        while(arr.length && (obj = obj[arr.shift()]));
-        return obj;
+function populateAuthorTooltip(tooltipNode, data, tooltipAction){
+    var templateRegex = /\%([a-z\.\_]*)\%/gi,
+        evalTemplateRegex = /\$([a-z0-9\.\?\s\"\-\:\(\)\_\{\}\,\+\-\*\/\=]*)\$/gi,
+        tooltipTemplate = [
+            '<div class="author-avatar"><img src="%user.avatar_url%&s=64" width="64" height="64" /></div>',
+            '<div class="author-body">',
+                '<div class="author-name">',
+                    '<span style="display: $user.name ? "inline-block" : "none"$;" class="octotip-highlight">%user.name%</span>',
+                    '<span> [%user.login%]</span>',
+                '</div>',
+                '<div style="display: $user.location ? "block" : "none"$;" class="author-location"><span class="octotip-highlight">%user.location%</span></div>',
+                '<div style="display: $user.company ? "block" : "none"$;" class="author-company">Company: <span class="octotip-highlight">%user.company%</span></div>',
+                '<div>Folowers: <span class="octotip-highlight">%user.followers%</span></div>',
+                '<div>Registered <time datetime="%user.created_at%" is="relative-time"></time></div>',
+                '<div>Repositories: <span class="octotip-highlight">$repos.length$</span></div>',
+                '<div>Stars: <span class="octotip-highlight">$repos.length === 0 ? 0 : repos.map(function(r){return r.stargazers_count}).reduce(function(a,b){return a+ b})$</span></div></div>',
+            '</div>'
+        ].join(''),
+        match = templateRegex.exec(tooltipTemplate),
+        keys = [];
+
+    var user = data.user;
+    var repos = data.repos;
+
+    while (match != null) {
+        keys.push(match[1]);
+        match = templateRegex.exec(tooltipTemplate);
     }
 
+    keys.forEach(function(key){
+        var value = getDescendantProp(data, key);
+        tooltipTemplate = tooltipTemplate.replace('%' + key + '%', value);
+    });
+
+    keys = [];
+    match = evalTemplateRegex.exec(tooltipTemplate)
+    while (match != null) {
+        keys.push(match[1]);
+        match = evalTemplateRegex.exec(tooltipTemplate);
+    }
+
+    keys.forEach(function(key){
+        tooltipTemplate = tooltipTemplate.replace('$' + key + '$', eval(key));
+    });
+
+    tooltipNode.innerHTML = tooltipTemplate;
+}
+
+function populateRepositoryTooltip(tooltipNode, data, tooltipAction){
     var templateRegex = /\%([a-z\.\_]*)\%/gi,
         tooltipTemplate = [
             '<div class="octotip-title">',
@@ -322,6 +390,14 @@ function populateTooltip(tooltipNode, data){
 
     if (data.contributors){
         tooltipNode.querySelector('.octotip-contributors .octotip-highlight').innerText = data.contributors.length;
+    }
+}
+
+function populateTooltip(tooltipNode, data, tooltipAction){
+    if (typeof tooltipAction.render === 'function'){
+        tooltipAction.render.apply(this, arguments);
+    } else {
+        tooltipNode.style.display = 'none';
     }
 }
 

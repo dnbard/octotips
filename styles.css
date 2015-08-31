@@ -13,16 +13,17 @@
     font-variant: normal;
     font-weight: normal;
     margin-left: 5px;
-    padding-bottom: 2px;
-    padding-left: 2px;
-    padding-right: 2px;
-    padding-top: 2px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 5px;
     pointer-events: none;
     position: absolute;
     left: 0;
     text-align: center;
     word-wrap: break-word;
     width: auto;
+    min-width: 300px;
     max-width: 450px;
     z-index: 1000000;
     line-height: 1.2;
@@ -53,8 +54,9 @@
 }
 
 .octotip hr {
-    border-color: #797979;
-    margin: 3px 0;
+    border-color: #797979 !important;
+    margin: 3px 0 !important;
+    height: 1px !important;
 }
 
 .octotip .octicon {
@@ -70,12 +72,14 @@
 }
 
 .mini-repo-list-item *,
-.repo-list-name a * {
+.repo-list-name a *,
+.author a.url span,
+.participant-avatar img{
     pointer-events: none;
 }
 
 .octotip-loader {
-    width: 220px;
+    width: 300px;
     height: 24px;
     margin: 5px;
     border-radius: 3px;
@@ -101,4 +105,14 @@
     to {
         background-position: 0 0;
     }
+}
+
+.author-avatar{
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+
+.author-body{
+    margin-left: 64px;
 }
