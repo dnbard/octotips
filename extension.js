@@ -268,12 +268,27 @@ function mapExtend(map, id, obj){
     return newObj;
 }
 
+var authSpawnTimestamp = null;
 function populateErrorTooltip(tooltipNode){
     tooltipNode.innerHTML =
         '<div>Error</div>' +
         '<div>Please login to the GitHub as Octotips user</div>' +
         '<div>More help can be found at: https://github.com/dnbard/octotips</div>';
+
+    if (authSpawnTimestamp === null || new Date() - authSpawnTimestamp > 10000){
+        chrome.runtime.sendMessage({ action: "github-auth" }, function(response) {
+            console.log(response);
+        });
+        authSpawnTimestamp = new Date();
+    }
 }
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (sender.id !== chrome.runtime.id){
+        return;
+    }
+
+    token = atob(request.token);
+});
 
 function populateAuthorTooltip(tooltipNode, data, tooltipAction){
     var templateRegex = /\%([a-z\.\_]*)\%/gi,
