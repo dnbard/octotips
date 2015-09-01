@@ -114,5 +114,9 @@
 }
 
 .author-body{
-    margin-left: 64px;
+    margin-left: 75px;
+}
+
+.users li.follow-list-item{
+    position: relative;
 }

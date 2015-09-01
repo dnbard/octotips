@@ -93,7 +93,11 @@ function initialize(){
             '/new',
             '/explore',
             '/stars',
-            'help.github.com'
+            'help.github.com',
+            '//gist',
+            'shop.github.com',
+            'developer.github.com',
+            'enterprise.github.com'
         ].join('|'));
 
     Array.prototype.slice.call(linkElements, 0).forEach(function (element) {
@@ -294,7 +298,7 @@ function populateAuthorTooltip(tooltipNode, data, tooltipAction){
     var templateRegex = /\%([a-z\.\_]*)\%/gi,
         evalTemplateRegex = /\$([a-z0-9\.\?\s\"\-\:\(\)\_\{\}\,\+\-\*\/\=]*)\$/gi,
         tooltipTemplate = [
-            '<div class="author-avatar"><img src="%user.avatar_url%&s=64" width="64" height="64" /></div>',
+            '<div class="author-avatar"><img src="%user.avatar_url%&s=75" width="75" height="75" /></div>',
             '<div class="author-body">',
                 '<div class="author-name">',
                     '<span style="display: $user.name ? "inline-block" : "none"$;" class="octotip-highlight">%user.name%</span>',
