@@ -61,7 +61,8 @@ chrome.storage.sync.get(function(storage){
 
 function initialize(){
     var linkElements = document.querySelectorAll('a'),
-        linkRegex = /^[htpsgihubcom\.\:\/]*(\/[a-z0-9\-\_\.]+\/[a-z0-9\-\_\.]+)/i,
+        linkRegex = /^(\/[a-z0-9\-\_\.]+\/[a-z0-9\-\_\.]+)/i,
+        linkRegex2 = /^https:\/\/github.com(\/[a-z0-9\-\_\.]+\/[a-z0-9\-\_\.]+)/i,
         authorRegex = /^[htpsgihubcom\.\/:]*(\/[a-z0-9\-\_\.]*)$/i,
         stopRegex = new RegExp([
             '/profile',
@@ -116,6 +117,15 @@ function initialize(){
             collection.set(id, {
                 type: TooltipTypes.REPOSITORY,
                 target: linkRegex.exec(href)[1],
+                render: populateRepositoryTooltip
+            });
+            element.setAttribute('data-octotips-id', id);
+        } else if(linkRegex2.test(href)){
+            id = uuid();
+
+            collection.set(id, {
+                type: TooltipTypes.REPOSITORY,
+                target: linkRegex2.exec(href)[1],
                 render: populateRepositoryTooltip
             });
             element.setAttribute('data-octotips-id', id);
