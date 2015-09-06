@@ -1,6 +1,6 @@
 {
     "name": "Octotips",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Tooltips extension for GitHub",
     "permissions": ["tabs", "http://*/*", "identity", "*://www.github.com/*", "windows", "storage"],
     "content_scripts": [{
